@@ -11,6 +11,9 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private Animator anim;
 
+    public float raycastLength = 0.5f;
+    public LayerMask groundMask;
+    public bool GroundCheck;
     // Start is called before the first frame update
     void Start()
     {
@@ -24,8 +27,10 @@ public class PlayerController : MonoBehaviour
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
 
-        float j = Input.GetKey(KeyCode.Space) && rb.velocity.y < MaxJumpSpeed ? 1 : 0;
-
+        GroundCheck = groundCheck();
+        float j = handleJumping();
+        
+        
         rb.velocity = new Vector2(h * Speed, rb.velocity.y + j * Jump);
 
         anim.SetFloat("Velocity", Mathf.Abs(rb.velocity.y));
@@ -36,5 +41,40 @@ public class PlayerController : MonoBehaviour
 
         //for Nathan
         //anim.SetFloat("Velocity", rb.velocity.magnitude);
+    }
+    bool jumping;
+    private float handleJumping()
+    {
+        int j = Input.GetKey(KeyCode.Space)? 1:0;
+        if (rb.velocity.y > MaxJumpSpeed) {
+            j = 0;
+            jumping = false;
+        }
+        if (GroundCheck && j > 0) {
+            jumping = true;
+            return j;
+        }
+        else if (j > 0 && jumping)
+        {
+            return j;
+        }
+        else
+        {
+            jumping = false;
+            return 0;
+        }
+    }
+
+    private bool groundCheck()
+    {
+        
+        bool grounded = false;
+        //RaycastHit2D hit;
+        //Ray2D ray = new Ray2D(transform.position, -transform.up * raycastLength);
+        if(Physics2D.Raycast(transform.position, -transform.up, raycastLength, groundMask))
+        {
+            grounded = true;
+        }
+        return grounded;
     }
 }
