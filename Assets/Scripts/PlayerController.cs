@@ -14,11 +14,23 @@ public class PlayerController : MonoBehaviour
     public float raycastLength = 0.5f;
     public LayerMask groundMask;
     public bool GroundCheck;
+
+    private PlayerHandler ph;
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        ph = FindObjectOfType<PlayerHandler>();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.B) && GetComponentInChildren<Bomb>())
+        {
+            Debug.Log("Throwing Bomb");
+            GetComponentInChildren<Bomb>().Throw(transform);
+        }
     }
 
     // Update is called once per frame
@@ -42,27 +54,70 @@ public class PlayerController : MonoBehaviour
         //for Nathan
         //anim.SetFloat("Velocity", rb.velocity.magnitude);
     }
-    bool jumping;
+    public bool jumping;
+    public bool secondJumping ;
+    public bool jumped;
+    public bool releaseJump;
     private float handleJumping()
     {
-        int j = Input.GetKey(KeyCode.Space)? 1:0;
+        int j = Input.GetKey(KeyCode.Space) ? 1 : 0;
+
+        //check for on jump down
+        if (j > 0 && releaseJump) jumped = true;
+        else jumped = false;
+        releaseJump = j > 0 ? false : true;
+
+        
         if (rb.velocity.y > MaxJumpSpeed) {
             j = 0;
             jumping = false;
+            //secondJumping = false;
         }
-        if (GroundCheck && j > 0) {
-            jumping = true;
-            return j;
-        }
-        else if (j > 0 && jumping)
+        
+
+        //single jump
+        if(GroundCheck || jumping && !secondJumping)
         {
-            return j;
+            if (j > 0 && !jumping)
+            {
+                jumping = true;
+                return j;
+            }
+            else if (j > 0 && jumping)
+            {
+                return j;
+            }
+
+            else
+            {
+                jumping = false;
+                return 0;
+            }
+        }
+        //double jump
+        else if (ph.Inventory.hasDoubleJump)
+        {
+            if(j>0 && !secondJumping && !jumping && jumped)
+            {
+                jumping = true;
+                secondJumping = true;
+                return j;
+            }else if(j > 0 && jumping && secondJumping)
+            {
+                return j;
+            }
+            else
+            {
+                jumping = false;
+                return 0;
+            }
         }
         else
         {
-            jumping = false;
             return 0;
         }
+        
+
     }
 
     private bool groundCheck()
@@ -74,6 +129,7 @@ public class PlayerController : MonoBehaviour
         if(Physics2D.Raycast(transform.position, -transform.up, raycastLength, groundMask))
         {
             grounded = true;
+            secondJumping = false;
         }
         return grounded;
     }
