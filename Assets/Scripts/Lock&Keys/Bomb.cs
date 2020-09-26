@@ -9,10 +9,10 @@ public class Bomb : MonoBehaviour
     public float mass = 1;
     private bool ignited = false;
 
-    private List<GameObject> bombTargets = new List<GameObject>();
+    public List<GameObject> bombTargets = new List<GameObject>();
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (!ignited && collision.transform.CompareTag("Player"))
+        if (!ignited && collision.transform.CompareTag("Player") && !collision.transform.GetComponentInChildren<Bomb>())
         {
             ignited = true;
             transform.parent = collision.transform;
@@ -44,7 +44,7 @@ public class Bomb : MonoBehaviour
     {
         if (collision.CompareTag("BombWall"))
         {
-            bombTargets.Add(collision.gameObject);
+            if(!bombTargets.Contains(collision.gameObject)) bombTargets.Add(collision.gameObject);
         }
     }
 
@@ -52,18 +52,21 @@ public class Bomb : MonoBehaviour
     {
         if (collision.CompareTag("BombWall"))
         {
-            bombTargets.Remove(collision.gameObject);
+            if(bombTargets.Contains(collision.gameObject)) bombTargets.Remove(collision.gameObject);
         }
     }
 
     public void BombExplodes()
     {
-
-        foreach (GameObject target in bombTargets)
+        for(int i = bombTargets.Count -1; i >= 0; i -= 1)
         {
-            //bombTargets.Remove(target);
-            Destroy(target);
+            Destroy(bombTargets[i]);
         }
+        //foreach (GameObject target in bombTargets)
+        //{
+        //    //bombTargets.Remove(target);
+            
+        //}
         Destroy(gameObject);
     }
 }
