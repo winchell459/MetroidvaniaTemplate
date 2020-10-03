@@ -60,7 +60,7 @@ public class Bomb : MonoBehaviour
     {
         for(int i = bombTargets.Count -1; i >= 0; i -= 1)
         {
-            Destroy(bombTargets[i]);
+            //Destroy(bombTargets[i]);
         }
         //foreach (GameObject target in bombTargets)
         //{

@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31a03ba393db62243a337130ff668989, type: 3}
   m_Name: Inventory
   m_EditorClassIdentifier: 
-  hasYellowKey: 1
+  YellowKeyCount: 1
   hasDoubleJump: 1
