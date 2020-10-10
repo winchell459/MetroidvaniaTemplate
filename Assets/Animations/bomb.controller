@@ -64,10 +64,10 @@ AnimatorStateMachine:
   m_ChildStates:
   - serializedVersion: 1
     m_State: {fileID: 5619676658968266167}
-    m_Position: {x: 320, y: 70, z: 0}
+    m_Position: {x: 380, y: -50, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 7125408911291792823}
-    m_Position: {x: 300, y: 290, z: 0}
+    m_Position: {x: 370, y: 150, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions: []
   m_EntryTransitions: []
@@ -119,7 +119,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Rate: 0.1
   ExplosionSpeed: 2
-  Explosion: {fileID: 8285315775993754435, guid: 8e76af73bd510874084e4038ea040d39,
+  Explosion: {fileID: 1949358430358367760, guid: 85e62e24a774d48548684a6f927fd9c4,
     type: 3}
 --- !u!1102 &7125408911291792823
 AnimatorState:

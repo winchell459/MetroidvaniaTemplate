@@ -58,15 +58,7 @@ public class Bomb : MonoBehaviour
 
     public void BombExplodes()
     {
-        for(int i = bombTargets.Count -1; i >= 0; i -= 1)
-        {
-            //Destroy(bombTargets[i]);
-        }
-        //foreach (GameObject target in bombTargets)
-        //{
-        //    //bombTargets.Remove(target);
-            
-        //}
+       
         Destroy(gameObject);
     }
 }
