@@ -10,7 +10,7 @@ public class PlayerHandler : MonoBehaviour
     {
         if (ResetOnStart)
         {
-            Inventory.hasDoubleJump = false;
+            //Inventory.hasDoubleJump = false;
             Inventory.hasYellowKey = false;
         }
     }

@@ -73,16 +73,20 @@ public class PlayerController : MonoBehaviour
             jumping = false;
             //secondJumping = false;
         }
-        
+        if (GroundCheck)
+        {
+            ph.Inventory.ResetAccessory(AbilityItem.AbilityTypes.DoubleJump);
+        }
 
         //single jump
-        if(GroundCheck || jumping && !secondJumping)
+        if (GroundCheck || jumping && !secondJumping)
         {
             if (j > 0 && !jumping)
             {
                 jumping = true;
                 return j;
             }
+            //continue to accelerate while holding button
             else if (j > 0 && jumping)
             {
                 return j;
@@ -95,14 +99,17 @@ public class PlayerController : MonoBehaviour
             }
         }
         //double jump
-        else if (ph.Inventory.hasDoubleJump)
+        else 
         {
-            if(j>0 && !secondJumping && !jumping && jumped)
+            Debug.Log("Has Double Jump");
+            if(j>0 && !secondJumping && !jumping && jumped && ph.Inventory.UseAccessory(AbilityItem.AbilityTypes.DoubleJump))
             {
                 jumping = true;
                 secondJumping = true;
                 return j;
-            }else if(j > 0 && jumping && secondJumping)
+            }
+            //continue to accelerate while holding button
+            else if (j > 0 && jumping && secondJumping)
             {
                 return j;
             }
@@ -112,10 +119,7 @@ public class PlayerController : MonoBehaviour
                 return 0;
             }
         }
-        else
-        {
-            return 0;
-        }
+        
         
 
     }

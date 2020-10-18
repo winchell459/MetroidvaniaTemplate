@@ -5,6 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "Inventory", menuName = "ScriptableObject/Inventory")]
 public class PlayerInventory : ScriptableObject
 {
+    public List<AbilityItem> Accessories = new List<AbilityItem>();
     public int YellowKeyCount = 0;
 
     public bool hasYellowKey {
@@ -18,7 +19,8 @@ public class PlayerInventory : ScriptableObject
             else YellowKeyCount = 0;
         }
     }
-    public bool hasDoubleJump;
+    //public bool hasDoubleJump;
+
 
     private void Awake()
     {
@@ -36,6 +38,35 @@ public class PlayerInventory : ScriptableObject
         else
         {
             return false;
+        }
+    }
+
+    public void AddAccessory(AbilityItem item)
+    {
+        Accessories.Add(item);
+    }
+
+    public bool UseAccessory(AbilityItem.AbilityTypes type)
+    {
+        foreach( AbilityItem ability in Accessories)
+        {
+            if(type == ability.AbilityType)
+            {
+                return ability.canUse;
+            }
+        }
+        return false;
+    }
+
+    public void ResetAccessory(AbilityItem.AbilityTypes type)
+    {
+        foreach (AbilityItem ability in Accessories)
+        {
+            if (type == ability.AbilityType)
+            {
+                //Debug.Log("Reset " + type);
+                ability.ResetUse();
+            }
         }
     }
 }
