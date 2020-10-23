@@ -21,6 +21,9 @@ public class AbilityItem : ScriptableObject
     private float usedStart = float.NegativeInfinity;
     private bool usedStarted = false;
 
+    //added day 5
+    public bool isUnique = true;
+
     public bool canUse
     {
         get

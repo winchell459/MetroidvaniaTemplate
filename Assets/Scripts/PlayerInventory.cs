@@ -43,7 +43,8 @@ public class PlayerInventory : ScriptableObject
 
     public void AddAccessory(AbilityItem item)
     {
-        Accessories.Add(item);
+        //changed day 5 adding condition
+        if(item.isUnique && !Accessories.Contains(item) || !item.isUnique) Accessories.Add(item);
     }
 
     public bool UseAccessory(AbilityItem.AbilityTypes type)
