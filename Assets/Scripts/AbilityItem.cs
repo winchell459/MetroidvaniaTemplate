@@ -20,6 +20,8 @@ public class AbilityItem : ScriptableObject
     public float Duration = 1;
     private float usedStart = float.NegativeInfinity;
     private bool usedStarted = false;
+    public bool isUnique = true;
+    public bool isEquipable = true;
 
     public bool canUse
     {

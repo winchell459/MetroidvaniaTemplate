@@ -63,7 +63,7 @@ public class PlayerController : MonoBehaviour
         int j = Input.GetKey(KeyCode.Space) ? 1 : 0;
 
         //check for on jump down
-        if (j > 0 && releaseJump) jumped = true;
+        if (j > 0 && releaseJump) jumped = true; //OnKeyDown()
         else jumped = false;
         releaseJump = j > 0 ? false : true;
 
@@ -119,6 +119,7 @@ public class PlayerController : MonoBehaviour
                 return 0;
             }
         }
+       
         
         
 

@@ -15,3 +15,5 @@ MonoBehaviour:
   AbilityType: 0
   Power: 1
   Duration: 0
+  isUnique: 1
+  isEquipable: 0
