@@ -37,13 +37,19 @@ public class PlayerController : MonoBehaviour
     void FixedUpdate()
     {
         float h = Input.GetAxis("Horizontal");
-        float v = Input.GetAxis("Vertical");
+        //float v = Input.GetAxis("Vertical");
+        float j = Input.GetKey(KeyCode.Space) ? 1 : 0;
 
         GroundCheck = groundCheck();
-        float j = handleJumping();
         
+        j = handleJumping((int) j);
         
-        rb.velocity = new Vector2(h * Speed, rb.velocity.y + j * Jump);
+        Vector2 Vf = new Vector2(h * Speed, 0);
+
+        //rb.velocity = new Vector2(h * Speed, rb.velocity.y + j * Jump);
+        float h_velocity = UtilityPhysics.GetForce(h*Speed, rb.velocity.x, rb.mass, Time.deltaTime);
+        //h_velocity += j * Jump * Vector2.up;
+        rb.AddForce(new Vector2(h_velocity, j*Jump));
 
         anim.SetFloat("Velocity", Mathf.Abs(rb.velocity.y));
         anim.SetFloat("VelocityH", Mathf.Abs(rb.velocity.x));
@@ -58,9 +64,9 @@ public class PlayerController : MonoBehaviour
     public bool secondJumping ;
     public bool jumped;
     public bool releaseJump;
-    private float handleJumping()
+    private float handleJumping(int j)
     {
-        int j = Input.GetKey(KeyCode.Space) ? 1 : 0;
+        //int j = Input.GetKey(KeyCode.Space) ? 1 : 0;
 
         //check for on jump down
         if (j > 0 && releaseJump) jumped = true; //OnKeyDown()
@@ -137,5 +143,18 @@ public class PlayerController : MonoBehaviour
             secondJumping = false;
         }
         return grounded;
+    }
+
+    private float checkCollision(Vector2 start, Vector2 direction, float magnitude, LayerMask mask)
+    {
+        RaycastHit2D hit = Physics2D.Raycast(start, direction, magnitude, mask);
+        if (hit)
+        {
+            return hit.distance;
+        }
+        else
+        {
+            return magnitude + 1;
+        }
     }
 }
