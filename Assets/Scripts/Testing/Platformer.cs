@@ -19,6 +19,7 @@ public class Platformer : MonoBehaviour
     public Transform[] isWallCheckerLeft, isWallCheckerRight;
     bool isWalledLeft = false;
     bool isWalledRight = false;
+    public LayerMask wallLayer;
 
     //late jump parameters
     public float rememberGroundedFor = 0.1f;
@@ -52,7 +53,7 @@ public class Platformer : MonoBehaviour
         get
         {
 
-            return speed * DashMultiplier;
+            return DashSpeedCalc();
         }
     }
     bool isDashing;
@@ -65,8 +66,12 @@ public class Platformer : MonoBehaviour
     bool XButtonUp;
     bool jumpButton;
     bool jumpButtonDown;
+    bool gravityFlipButtonDown;
+    bool gravityFlipButton;
 
     public Abilities PlayerAbilities;
+
+    int gravityFlipped = 1;
 
     // Start is called before the first frame update
     void Start()
@@ -84,7 +89,9 @@ public class Platformer : MonoBehaviour
     void FixedUpdate()
     {
         HandleInput();
+        //Adjust the isGroundedChecker position if not grounded
         AdjustGrounded(isGrounded);
+
         Dash();
         Move();
         WallJump();
@@ -92,6 +99,8 @@ public class Platformer : MonoBehaviour
         BetterJump();
         CheckIfGrounded();
         CheckForWall();
+
+        GravityFlip();
     }
 
     void SetupGroundCheckers()
@@ -102,10 +111,15 @@ public class Platformer : MonoBehaviour
         groundCheckerRightPos = isGroundedCheckerRight.localPosition;
     }
 
+    //Player Input Stats
     float lastXDownTime;
     float lastXUpTime;
     float lastXDownDuration;
     float lastXUpDuration;
+    float lastJumpDownTime;
+    float lastJumpUpTime;
+    float lastJumpDownDuration;
+    float lastJumpUpDuration;
 
     void HandleInput()
     {
@@ -140,13 +154,35 @@ public class Platformer : MonoBehaviour
         //jumpButtonDown = Input.GetKeyDown(KeyCode.Space);
         if (Input.GetKey(KeyCode.Space) || Input.GetAxisRaw("Jump") > 0)
         {
-            if (!jumpButton) jumpButtonDown = true;
+            if (!jumpButton)
+            {
+                jumpButtonDown = true;
+                lastJumpDownTime = Time.time;
+                lastJumpUpDuration = Time.time - lastJumpUpTime;
+            }
             else jumpButtonDown = false;
             jumpButton = true;
         }
         else
         {
+            if (jumpButton)
+            {
+                lastJumpUpTime = Time.time;
+                lastJumpDownDuration = Time.time - lastJumpDownTime;
+            }
             jumpButton = jumpButtonDown = false;
+        }
+
+        if (Input.GetKey(KeyCode.G))
+        {
+            if (!gravityFlipButton) gravityFlipButtonDown = true;
+            else gravityFlipButtonDown = false;
+            gravityFlipButton = true;
+        }
+        else
+        {
+            gravityFlipButton = false;
+            gravityFlipButtonDown = false;
         }
     }
     void Move()
@@ -163,18 +199,30 @@ public class Platformer : MonoBehaviour
         if (!isWallJumping) rb.velocity = new Vector2(moveBy, rb.velocity.y);
         else
         {
-            float movePercent = (Time.time - wallJumpStart) / wallJumpDuration;
-            float movingWeight = Mathf.Abs(moveX) > 0? 1: 0;
-            movingWeight += Mathf.Sign(moveX) != Mathf.Sign(rb.velocity.x) ? 1 : 0;
-            Debug.Log(Mathf.Sign(rb.velocity.x));
+            
+            //Debug.Log(Mathf.Sign(rb.velocity.x));
 
             //zero out velocity if direction held for entire jump
+            //float movingWeight = Mathf.Abs(moveX) > 0 ? 1 : 0;
+            //movingWeight += Mathf.Sign(moveX) != Mathf.Sign(rb.velocity.x) ? 1 : 0;
             //rb.velocity = new Vector2(rb.velocity.x - movingWeight * wallJumpDirection * Time.deltaTime * speed / wallJumpDuration, rb.velocity.y);
 
             //rb.velocity = new Vector2(rb.velocity.x - movingWeight * wallJumpDirection * Time.deltaTime * /*wallJumpForce*/ moveBy/wallJumpDuration, rb.velocity.y);
             float dV = Time.deltaTime * (rb.velocity.x - moveBy) / (wallJumpStart + wallJumpDuration - Time.time) ;
             rb.velocity = new Vector2(rb.velocity.x - dV, rb.velocity.y);
         }
+    }
+    float DashSpeedCalc()
+    {
+        //m = At + DashMultiplier
+        //1 = A(DashDuration) + DashMultiplier
+        //1 - DashMultiplier = A*DashDuration
+        //A = (1 - DashMultiplier)/DashDuration
+        //m = t*(1 - DashMultiplier)/DashDuration + DashMultiplier
+      
+        float multiplier = (Time.time - dashBeginTime) * (1 - DashMultiplier) / DashDuration + DashMultiplier;
+        Debug.Log(multiplier);
+        return speed * multiplier;
     }
 
     void Dash()
@@ -215,21 +263,26 @@ public class Platformer : MonoBehaviour
     bool isWallJumping { get { return wallJumpStart + wallJumpDuration > Time.time; } set { wallJumpStart = value ?  Time.time: Mathf.NegativeInfinity; } }
     void WallJump()
     {
-        if(isWalledLeft && !isWalledRight && !isGrounded)
+        if (PlayerAbilities.Climb)
         {
-            if (jumpButtonDown)
+            if (isWalledLeft && !isWalledRight && !isGrounded)
             {
-                rb.velocity = /*new Vector2(rb.velocity.x, jumpForce); */ wallJumpForce * WallJumpNormal;
-                wallJumpStart = Time.time;
-                wallJumpDirection = 1;
+                if (jumpButtonDown)
+                {
+                    rb.velocity =  wallJumpForce * WallJumpNormal * new Vector2(1,gravityFlipped);
+                    wallJumpStart = Time.time;
+                    wallJumpDirection = 1;
+                }
             }
-        }else if(!isWalledLeft && isWalledRight && !isGrounded)
-        {
-            if (jumpButtonDown)
+            else if (!isWalledLeft && isWalledRight && !isGrounded)
             {
-                rb.velocity = new Vector2(-wallJumpForce * WallJumpNormal.x, wallJumpForce * WallJumpNormal.y);
-                wallJumpStart = Time.time;
-                wallJumpDirection = -1;
+                if (jumpButtonDown)
+                {
+                    Debug.Log("WallJumped");
+                    rb.velocity = new Vector2(-wallJumpForce * WallJumpNormal.x, wallJumpForce * WallJumpNormal.y) * new Vector2(1, gravityFlipped);
+                    wallJumpStart = Time.time;
+                    wallJumpDirection = -1;
+                }
             }
         }
     }
@@ -251,17 +304,17 @@ public class Platformer : MonoBehaviour
         if (/*Input.GetKeyDown(KeyCode.Space)*/ jumpButtonDown && (isGrounded || Time.time - lastTimeGrounded <= rememberGroundedFor || (PlayerAbilities.DoubleJump && additionalJumps > 0)) )
         {
             
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+            rb.velocity = new Vector2(rb.velocity.x, gravityFlipped*jumpForce);
             if(!isGrounded) additionalJumps -= 1;
         }
     }
     void BetterJump()
     {
-        if (rb.velocity.y < 0)
+        if (gravityFlipped * rb.velocity.y < 0)
         {
             rb.velocity += Vector2.up * Physics2D.gravity * (fallMultiplier - 1) * Time.deltaTime;
         }
-        else if (rb.velocity.y > 0 && !/*Input.GetKey(KeyCode.Space)*/jumpButton)
+        else if (gravityFlipped * rb.velocity.y > 0 && !jumpButton)
         {
             rb.velocity += Vector2.up * Physics2D.gravity * (lowJumpMultiplier - 1) * Time.deltaTime;
         }
@@ -269,33 +322,58 @@ public class Platformer : MonoBehaviour
     //allows for extended jumps on ledges and prevents isGrounded from being triggered by a wall
     void AdjustGrounded(bool grounded)
     {
+        //Debug.Log("Adjusted(" + grounded + ")");
+        Vector2 leftPos = groundCheckerLeftPos * new Vector2(1, gravityFlipped);
+        Vector2 rightPos = groundCheckerRightPos * new Vector2(1, gravityFlipped);
         if (grounded)
         {
-            isGroundedCheckerLeft.localPosition = groundCheckerLeftPos;
-            isGroundedCheckerRight.localPosition = groundCheckerRightPos;
+            isGroundedCheckerLeft.localPosition = leftPos; // groundCheckerLeftPos;
+            isGroundedCheckerRight.localPosition = rightPos;// groundCheckerRightPos;
         }
         else
         {
             Vector2 offset = new Vector2(0.05f, 0);
-            isGroundedCheckerLeft.localPosition = groundCheckerLeftPos + offset;
-            isGroundedCheckerRight.localPosition = groundCheckerRightPos - offset;
+            isGroundedCheckerLeft.localPosition = /*groundCheckerLeftPos*/ leftPos + offset;
+            isGroundedCheckerRight.localPosition = /*groundCheckerRightPos*/ rightPos - offset;
+        }
+    }
+
+    void GravityFlip()
+    {
+        if (gravityFlipButtonDown)
+        {
+            if (gravityFlipped == -1)
+            {
+                
+                gravityFlipped = 1;
+            }
+            else
+            {
+                //transform.eulerAngles = new Vector3(0, 0, 180);
+                gravityFlipped = -1;
+            }
+            foreach (Transform checker in isGroundedChecker)
+            {
+                checker.localPosition = new Vector3(checker.localPosition.x, -checker.localPosition.y, 0);
+            }
+            Physics2D.gravity = -Physics2D.gravity;
         }
     }
 
     void CheckIfGrounded()
     { 
-        isGrounded = CheckForCollision(isGroundedChecker);
+        isGrounded = CheckForCollision(isGroundedChecker, groundLayer);
         if (isGrounded) additionalJumps = defaultAdditionalJumps;
     }
 
     void CheckForWall()
     {
-        isWalledLeft = CheckForCollision(isWallCheckerLeft);
-        isWalledRight = CheckForCollision(isWallCheckerRight);
+        isWalledLeft = CheckForCollision(isWallCheckerLeft, wallLayer);
+        isWalledRight = CheckForCollision(isWallCheckerRight, wallLayer);
     }
-    bool CheckForCollision(Vector2 checkerPos)
+    bool CheckForCollision(Vector2 checkerPos, LayerMask layer)
     {
-        Collider2D collider = Physics2D.OverlapCircle(checkerPos, checkGroundRadius, groundLayer);
+        Collider2D collider = Physics2D.OverlapCircle(checkerPos, checkGroundRadius, layer);
         if (collider != null)
         {
             return true;
@@ -306,10 +384,10 @@ public class Platformer : MonoBehaviour
         }
     }
 
-    bool CheckForCollision(Transform checker)
+    bool CheckForCollision(Transform checker, LayerMask layer)
     {
         //Collider2D collider = Physics2D.OverlapCircle(checker.position, checkGroundRadius, groundLayer);
-        if (CheckForCollision(checker.position))
+        if (CheckForCollision(checker.position, layer))
         {
             return true;
         }
@@ -319,11 +397,11 @@ public class Platformer : MonoBehaviour
         }
     }
 
-    bool CheckForCollision(Transform[] checkers)
+    bool CheckForCollision(Transform[] checkers, LayerMask layer)
     {
         foreach(Transform checker in checkers)
         {
-            if (CheckForCollision(checker))
+            if (CheckForCollision(checker, layer))
             {
                 return true;
             }
