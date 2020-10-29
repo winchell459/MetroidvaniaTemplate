@@ -72,6 +72,7 @@ public class Platformer : MonoBehaviour
     public Abilities PlayerAbilities;
 
     int gravityFlipped = 1;
+    bool canFlipGravity { get { return isGrounded; } }
 
     // Start is called before the first frame update
     void Start()
@@ -255,7 +256,7 @@ public class Platformer : MonoBehaviour
             //}
         }
     }
-    Vector2 WallJumpNormal = new Vector2(1,1);
+    public Vector2 WallJumpNormal = new Vector2(1,1);
     int wallJumpDirection = 0;
     public float wallJumpForce = 60;
     public float wallJumpDuration = 1;
@@ -340,7 +341,7 @@ public class Platformer : MonoBehaviour
 
     void GravityFlip()
     {
-        if (gravityFlipButtonDown)
+        if (gravityFlipButtonDown && canFlipGravity)
         {
             if (gravityFlipped == -1)
             {
