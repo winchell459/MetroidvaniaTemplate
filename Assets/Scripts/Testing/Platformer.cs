@@ -7,6 +7,7 @@ public class Platformer : MonoBehaviour
     Rigidbody2D rb;
     public float speed = 4;
     public float jumpForce = 6;
+    public float maxGravityForce = 10;
 
     bool isGrounded = false;
     public Transform[] isGroundedChecker;
@@ -71,14 +72,18 @@ public class Platformer : MonoBehaviour
 
     public Abilities PlayerAbilities;
 
-    int gravityFlipped = 1;
+    GravityObjectTheCube gravityObject;
+    int gravityFlipped
+    {
+        get { return gravityObject.gravityFlipped; }
+    }
     bool canFlipGravity { get { return isGrounded; } }
 
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-
+        gravityObject = GetComponent<GravityObjectTheCube>();
         SetupGroundCheckers();
     }
 
@@ -98,6 +103,8 @@ public class Platformer : MonoBehaviour
         WallJump();
         Jump();
         BetterJump();
+        if (gravityFlipped > 0 && rb.velocity.y < -maxGravityForce ) rb.velocity = new Vector2(rb.velocity.x, -maxGravityForce);
+        else if (gravityFlipped < 0 && rb.velocity.y > maxGravityForce) rb.velocity = new Vector2(rb.velocity.x, maxGravityForce);
         CheckIfGrounded();
         CheckForWall();
 
@@ -341,29 +348,17 @@ public class Platformer : MonoBehaviour
 
     void GravityFlip()
     {
-        if (gravityFlipButtonDown && canFlipGravity)
+        if (PlayerAbilities.GravitySwitch && gravityFlipButtonDown && canFlipGravity)
         {
-            if (gravityFlipped == -1)
-            {
-                
-                gravityFlipped = 1;
-            }
-            else
-            {
-                //transform.eulerAngles = new Vector3(0, 0, 180);
-                gravityFlipped = -1;
-            }
-            foreach (Transform checker in isGroundedChecker)
-            {
-                checker.localPosition = new Vector3(checker.localPosition.x, -checker.localPosition.y, 0);
-            }
-            Physics2D.gravity = -Physics2D.gravity;
+            
+            FindObjectOfType<WorldHandler>().FlipGravity();
         }
     }
 
     void CheckIfGrounded()
     { 
         isGrounded = CheckForCollision(isGroundedChecker, groundLayer);
+        if(isGrounded) lastTimeGrounded = Time.time;
         if (isGrounded) additionalJumps = defaultAdditionalJumps;
     }
 
@@ -377,6 +372,7 @@ public class Platformer : MonoBehaviour
         Collider2D collider = Physics2D.OverlapCircle(checkerPos, checkGroundRadius, layer);
         if (collider != null)
         {
+            
             return true;
         }
         else

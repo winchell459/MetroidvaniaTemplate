@@ -5,14 +5,35 @@ using UnityEngine;
 public class WorldHandler : MonoBehaviour
 {
     Vector2 gravityDirection;
-    Vector2 gravity;
+    Vector2 gravityDefault;
     private void Awake()
     {
-        gravity = Physics2D.gravity;
-        gravityDirection = gravity.normalized;
+        gravityDefault = Physics2D.gravity;
+        gravityDirection = gravityDefault.normalized;
     }
     public void FlipGravity(Vector2 flipDirection)
     {
+        gravityDirection = flipDirection.normalized;
+        Physics2D.gravity = gravityDefault.magnitude * gravityDirection;
+    }
 
+    bool gravityFlipped;
+    public void FlipGravity()
+    {
+        if (gravityFlipped)
+        {
+            FlipGravity(gravityDefault.normalized);
+            gravityFlipped = false;
+        }
+        else
+        {
+            FlipGravity(-gravityDefault.normalized);
+            gravityFlipped = true;
+        }
+
+        foreach(GravityObject go in FindObjectsOfType<GravityObject>())
+        {
+            go.FlipGravity();
+        }
     }
 }
