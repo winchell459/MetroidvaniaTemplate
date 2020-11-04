@@ -61,14 +61,14 @@ public class Platformer : MonoBehaviour
     
 
     //Standard Input variables
-    float moveX;
-    bool XButton;
-    bool XButtonDown;
-    bool XButtonUp;
-    bool jumpButton;
-    bool jumpButtonDown;
-    bool gravityFlipButtonDown;
-    bool gravityFlipButton;
+    //float moveX;
+    //bool XButton;
+    //bool XButtonDown;
+    //bool XButtonUp;
+    //bool jumpButton;
+    //bool jumpButtonDown;
+    //bool gravityFlipButtonDown;
+    //bool gravityFlipButton;
 
     public Abilities PlayerAbilities;
 
@@ -120,82 +120,93 @@ public class Platformer : MonoBehaviour
     }
 
     //Player Input Stats
-    float lastXDownTime;
-    float lastXUpTime;
-    float lastXDownDuration;
-    float lastXUpDuration;
-    float lastJumpDownTime;
-    float lastJumpUpTime;
-    float lastJumpDownDuration;
-    float lastJumpUpDuration;
+    //float lastXDownTime;
+    //float lastXUpTime;
+    //float lastXDownDuration;
+    //float lastXUpDuration;
+    //float lastJumpDownTime;
+    //float lastJumpUpTime;
+    //float lastJumpDownDuration;
+    //float lastJumpUpDuration;
+
+    ButtonInput<float> btnX = new ButtonInput<float>();
+    ButtonInput<bool> btnJump = new ButtonInput<bool>();
+    ButtonInput<bool> btnGravityFlip = new ButtonInput<bool>();
+
+    void SetupInput()
+    {
+
+    }
 
     void HandleInput()
     {
-
-        moveX = Input.GetAxisRaw("Horizontal");
-        if(Mathf.Abs(moveX) > 0.1f)
-        {
-            if (!XButton)
-            {
-                XButtonDown = true;
-                lastXDownTime = Time.time;
-                lastXUpDuration = lastXDownTime - lastXUpTime;
-            }
-            else XButtonDown = false;
-            XButton = true;
-            XButtonUp = false;
-        }
-        else
-        {
-            if (XButton)
-            {
-                XButtonUp = true;
-                lastXUpTime = Time.time;
-                lastXDownDuration = lastXUpTime - lastXDownTime;
-            }
-            else XButtonUp = false;
-            XButton = false;
-            XButtonDown = false;
+        btnX.Update(Input.GetAxisRaw("Horizontal"), Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0.1f);
+        btnJump.Update(Input.GetKey(KeyCode.Space) || Input.GetAxisRaw("Jump") > 0, Input.GetKey(KeyCode.Space) || Input.GetAxisRaw("Jump") > 0);
+        btnGravityFlip.Update(Input.GetKey(KeyCode.G), Input.GetKey(KeyCode.G));
+        //moveX = Input.GetAxisRaw("Horizontal");
+        //if(Mathf.Abs(moveX) > 0.1f)
+        //{
+        //    if (!XButton)
+        //    {
+        //        XButtonDown = true;
+        //        lastXDownTime = Time.time;
+        //        lastXUpDuration = lastXDownTime - lastXUpTime;
+        //    }
+        //    else XButtonDown = false;
+        //    XButton = true;
+        //    XButtonUp = false;
+        //}
+        //else
+        //{
+        //    if (XButton)
+        //    {
+        //        XButtonUp = true;
+        //        lastXUpTime = Time.time;
+        //        lastXDownDuration = lastXUpTime - lastXDownTime;
+        //    }
+        //    else XButtonUp = false;
+        //    XButton = false;
+        //    XButtonDown = false;
             
-        }
-        //jumpButton = Input.GetKey(KeyCode.Space);
-        //jumpButtonDown = Input.GetKeyDown(KeyCode.Space);
-        if (Input.GetKey(KeyCode.Space) || Input.GetAxisRaw("Jump") > 0)
-        {
-            if (!jumpButton)
-            {
-                jumpButtonDown = true;
-                lastJumpDownTime = Time.time;
-                lastJumpUpDuration = Time.time - lastJumpUpTime;
-            }
-            else jumpButtonDown = false;
-            jumpButton = true;
-        }
-        else
-        {
-            if (jumpButton)
-            {
-                lastJumpUpTime = Time.time;
-                lastJumpDownDuration = Time.time - lastJumpDownTime;
-            }
-            jumpButton = jumpButtonDown = false;
-        }
+        //}
+        ////jumpButton = Input.GetKey(KeyCode.Space);
+        ////jumpButtonDown = Input.GetKeyDown(KeyCode.Space);
+        //if (Input.GetKey(KeyCode.Space) || Input.GetAxisRaw("Jump") > 0)
+        //{
+        //    if (!jumpButton)
+        //    {
+        //        jumpButtonDown = true;
+        //        lastJumpDownTime = Time.time;
+        //        lastJumpUpDuration = Time.time - lastJumpUpTime;
+        //    }
+        //    else jumpButtonDown = false;
+        //    jumpButton = true;
+        //}
+        //else
+        //{
+        //    if (jumpButton)
+        //    {
+        //        lastJumpUpTime = Time.time;
+        //        lastJumpDownDuration = Time.time - lastJumpDownTime;
+        //    }
+        //    jumpButton = jumpButtonDown = false;
+        //}
 
-        if (Input.GetKey(KeyCode.G))
-        {
-            if (!gravityFlipButton) gravityFlipButtonDown = true;
-            else gravityFlipButtonDown = false;
-            gravityFlipButton = true;
-        }
-        else
-        {
-            gravityFlipButton = false;
-            gravityFlipButtonDown = false;
-        }
+        //if (Input.GetKey(KeyCode.G))
+        //{
+        //    if (!gravityFlipButton) gravityFlipButtonDown = true;
+        //    else gravityFlipButtonDown = false;
+        //    gravityFlipButton = true;
+        //}
+        //else
+        //{
+        //    gravityFlipButton = false;
+        //    gravityFlipButtonDown = false;
+        //}
     }
     void Move()
     {
-        float x = moveX;//Input.GetAxisRaw("Horizontal");
+        float x = btnX.value;//moveX;//Input.GetAxisRaw("Horizontal");
         //float moveBy = x * speed;
         float moveBy = isDashing && PlayerAbilities.Dash ? x * DashSpeed : x * speed;
 
@@ -237,7 +248,7 @@ public class Platformer : MonoBehaviour
     {
         if (isDashing)
         {
-            if(!XButton  || dashBeginTime + DashDuration < Time.time)
+            if(!btnX.hold  || dashBeginTime + DashDuration < Time.time)
             {
                 isDashing = false;
                 dashCoolDownBegin = Time.time;
@@ -246,14 +257,14 @@ public class Platformer : MonoBehaviour
         else if(dashCoolDownBegin + DashCooldownTime < Time.time)
         {
             int moveDir = 0;
-            if (moveX > 0) moveDir = 1;
-            else if (moveX < 0) moveDir = -1;
-            if(XButtonDown && moveDir == dashingDir && DashGapTime + lastXUpTime /*dashDirReleaseTime*/ > Time.time && lastXDownDuration <= dashDownTime)
+            if (btnX.value > 0) moveDir = 1;
+            else if (btnX.value < 0) moveDir = -1;
+            if (btnX.down && moveDir == dashingDir && DashGapTime + btnX.upTime/*lastXUpTime /*dashDirReleaseTime*/ > Time.time && btnX.downDuration/*lastXDownDuration*/ <= dashDownTime)
             {
                 isDashing = true;
                 dashBeginTime = Time.time;
 
-            }else if(XButton || XButtonDown)
+            }else if(btnX.hold || btnX.down)
             {
                 dashingDir = moveDir;
             }
@@ -275,7 +286,7 @@ public class Platformer : MonoBehaviour
         {
             if (isWalledLeft && !isWalledRight && !isGrounded)
             {
-                if (jumpButtonDown)
+                if (btnJump.down)
                 {
                     rb.velocity =  wallJumpForce * WallJumpNormal * new Vector2(1,gravityFlipped);
                     wallJumpStart = Time.time;
@@ -284,7 +295,7 @@ public class Platformer : MonoBehaviour
             }
             else if (!isWalledLeft && isWalledRight && !isGrounded)
             {
-                if (jumpButtonDown)
+                if (btnJump.down)
                 {
                     Debug.Log("WallJumped");
                     rb.velocity = new Vector2(-wallJumpForce * WallJumpNormal.x, wallJumpForce * WallJumpNormal.y) * new Vector2(1, gravityFlipped);
@@ -296,7 +307,7 @@ public class Platformer : MonoBehaviour
     }
     void Jump()
     {
-        if (showJumpGhost && /*Input.GetKeyDown(KeyCode.Space)*/ jumpButtonDown)
+        if (showJumpGhost && /*Input.GetKeyDown(KeyCode.Space)*/ btnJump.down)
         {
             if (!squareJumpGhost || newJumpGhost)
             {
@@ -309,7 +320,7 @@ public class Platformer : MonoBehaviour
             AdjustGrounded(false);
         }
 
-        if (/*Input.GetKeyDown(KeyCode.Space)*/ jumpButtonDown && (isGrounded || Time.time - lastTimeGrounded <= rememberGroundedFor || (PlayerAbilities.DoubleJump && additionalJumps > 0)) )
+        if (/*Input.GetKeyDown(KeyCode.Space)*/ btnJump.down && (isGrounded || Time.time - lastTimeGrounded <= rememberGroundedFor || (PlayerAbilities.DoubleJump && additionalJumps > 0)) )
         {
             
             rb.velocity = new Vector2(rb.velocity.x, gravityFlipped*jumpForce);
@@ -322,7 +333,7 @@ public class Platformer : MonoBehaviour
         {
             rb.velocity += Vector2.up * Physics2D.gravity * (fallMultiplier - 1) * Time.deltaTime;
         }
-        else if (gravityFlipped * rb.velocity.y > 0 && !jumpButton)
+        else if (gravityFlipped * rb.velocity.y > 0 && !btnJump.hold)
         {
             rb.velocity += Vector2.up * Physics2D.gravity * (lowJumpMultiplier - 1) * Time.deltaTime;
         }
@@ -348,7 +359,7 @@ public class Platformer : MonoBehaviour
 
     void GravityFlip()
     {
-        if (PlayerAbilities.GravitySwitch && gravityFlipButtonDown && canFlipGravity)
+        if (PlayerAbilities.GravitySwitch && btnGravityFlip.down && canFlipGravity)
         {
             
             FindObjectOfType<WorldHandler>().FlipGravity();
@@ -419,3 +430,4 @@ public class Abilities
     public bool Climb;
     public bool GravitySwitch;
 }
+
