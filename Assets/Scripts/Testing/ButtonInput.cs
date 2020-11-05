@@ -12,10 +12,17 @@ public class ButtonInput<T>
     public T value;
     public float upDuration { get { return Time.time - upTime; } }
     public float downDuration { get { return Time.time - downTime; } }
+    float threshold;
+
+    public ButtonInput(float threshold)
+    {
+        this.threshold = threshold;
+    }
 
     public void Update(T value, bool condition)
     {
         this.value = value;
+        
         if (condition)
         {
             if (!hold)
@@ -45,5 +52,26 @@ public class ButtonInput<T>
             down = false;
         }
     }
-    
+    public void Update(T value)
+    {
+        bool condition = false;
+        if (typeof(T) == typeof(bool)) condition = valueMag((bool)(object)value);
+        else if (typeof(T) == typeof(float)) condition = valueMag((float)(object)value);
+        else if (typeof(T) == typeof(Vector2)) condition = valueMag((Vector2)(object)value);
+        Update(value, condition);
+    }
+
+    bool valueMag(bool value)
+    {
+        return value;
+    }
+    bool valueMag(float value)
+    {
+        return Mathf.Abs(value) > threshold;
+    }
+    bool valueMag(Vector2 value)
+    {
+        return value.magnitude > threshold;
+    }
+
 }

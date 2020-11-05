@@ -129,9 +129,9 @@ public class Platformer : MonoBehaviour
     //float lastJumpDownDuration;
     //float lastJumpUpDuration;
 
-    ButtonInput<float> btnX = new ButtonInput<float>();
-    ButtonInput<bool> btnJump = new ButtonInput<bool>();
-    ButtonInput<bool> btnGravityFlip = new ButtonInput<bool>();
+    ButtonInput<float> btnX = new ButtonInput<float>(0.1f);
+    ButtonInput<bool> btnJump = new ButtonInput<bool>(0.1f);
+    ButtonInput<bool> btnGravityFlip = new ButtonInput<bool>(0.1f);
 
     void SetupInput()
     {
@@ -140,9 +140,9 @@ public class Platformer : MonoBehaviour
 
     void HandleInput()
     {
-        btnX.Update(Input.GetAxisRaw("Horizontal"), Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0.1f);
-        btnJump.Update(Input.GetKey(KeyCode.Space) || Input.GetAxisRaw("Jump") > 0, Input.GetKey(KeyCode.Space) || Input.GetAxisRaw("Jump") > 0);
-        btnGravityFlip.Update(Input.GetKey(KeyCode.G), Input.GetKey(KeyCode.G));
+        btnX.Update(Input.GetAxisRaw("Horizontal"));
+        btnJump.Update(Input.GetKey(KeyCode.Space) || Input.GetAxisRaw("Jump") > 0);
+        btnGravityFlip.Update(Input.GetKey(KeyCode.G));
         //moveX = Input.GetAxisRaw("Horizontal");
         //if(Mathf.Abs(moveX) > 0.1f)
         //{
