@@ -28,6 +28,20 @@ public class PlatformerController : MonoBehaviour
     ButtonInput<bool> btnJump = new ButtonInput<bool>(0);
     ButtonInput<bool> btnGravityFlip = new ButtonInput<bool>(0);
 
+    public Abilities PlayerAbilities;
+
+    //Dash Parameters
+    public float DashGapTime = 0.25f;
+    int dashingDir;
+    float dashDownTime = 0.2f;
+    float dashBeginTime = Mathf.NegativeInfinity;
+    public float DashCoolDownTime = 1;
+    float dashCoolDownBegin = Mathf.NegativeInfinity;
+    public float DashDuration = 1;
+    public float DashMultiplier = 3;
+    bool isDashing;
+    public float DashSpeed { get { return DashSpeedCalc(); } }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -38,7 +52,10 @@ public class PlatformerController : MonoBehaviour
     void Update()
     {
         HandleInput();
+
+        Dash();
         Move();
+        WallJump();
         Jump();
         BetterJump();
         CheckIfGrounded();
@@ -56,9 +73,55 @@ public class PlatformerController : MonoBehaviour
         if (isGrounded)
         {
             lastTimeGrounded = Time.time;
-            
+            isWallJumpGrounded = true;
         }
         
+    }
+
+    float DashSpeedCalc()
+    {
+        float multiplier = (1 - DashMultiplier) * (Time.time - dashBeginTime) / DashDuration + DashMultiplier;
+        return speed * multiplier;
+    }
+
+    void Dash()
+    {
+
+    }
+
+    public Vector2 WallJumpNormal = new Vector2(1, 1.25f);
+    public float WallJumpForce = 8;
+    public float WallJumpDuration = 0.5f;
+    private float wallJumpStart;
+    bool isWallJumping { get { return Time.time < wallJumpStart + WallJumpDuration; } }
+    bool isWallJumpGrounded;
+    void WallJump()
+    {
+
+        if (PlayerAbilities.Climb)
+        {
+            //walled on left
+            if(isWalledLeft && !isWalledRight && !isGrounded && isWallJumpGrounded)
+            {
+                if (btnJump.down)
+                {
+                    Debug.Log("Wall Jumped Left");
+                    rb.velocity = WallJumpForce * WallJumpNormal; //for gravity flipping we need to modify 
+                    wallJumpStart = Time.time;
+                    isWallJumpGrounded = false;
+                }
+            }
+            //walled on right
+            else if (isWalledRight && !isWalledLeft && !isGrounded && isWallJumpGrounded)
+            {
+                if (btnJump.down)
+                {
+                    rb.velocity = new Vector2(-WallJumpForce * WallJumpNormal.x, WallJumpForce * WallJumpNormal.y);
+                    wallJumpStart = Time.time;
+                    isWallJumpGrounded = false;
+                }
+            }
+        }
     }
 
     void Jump()
@@ -87,6 +150,13 @@ public class PlatformerController : MonoBehaviour
 
         if (moveX > 0 && isWalledRight) moveX = 0;
         else if (moveX < 0 && isWalledLeft) moveX = 0;
+
+        if (isWallJumping)
+        {
+            //dV increases as time remaining decreases
+            float dV = Time.deltaTime * (rb.velocity.x - moveX) / (wallJumpStart + WallJumpDuration - Time.time);
+            moveX = rb.velocity.x - dV;
+        }
 
 
         rb.velocity = new Vector2(moveX, moveY);
@@ -119,4 +189,16 @@ public class PlatformerController : MonoBehaviour
         }
         return false;
     }
+}
+
+[System.Serializable]
+public class Abilities
+{
+    public bool DoubleJump;
+    public bool Dash;
+    public bool Hover;
+    public bool Fly;
+    public bool StopWatch;
+    public bool Climb;
+    public bool GravitySwitch;
 }
