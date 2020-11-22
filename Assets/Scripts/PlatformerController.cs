@@ -19,7 +19,8 @@ public class PlatformerController : MonoBehaviour
     [SerializeField] float lowJumpMultiplier = 2f;
 
     [SerializeField] LayerMask groundMask, wallMask;
-    [SerializeField] Transform[] isGroundedCheckers, isWallCheckerLeft, isWallCheckerRight;
+    public Transform[] isGroundedCheckers, isWallCheckerLeft, isWallCheckerRight;
+    
 
     bool isGrounded, isWalledLeft, isWalledRight;
 
@@ -86,7 +87,30 @@ public class PlatformerController : MonoBehaviour
 
     void Dash()
     {
+        if (isDashing)
+        {
+            if(!btnX.hold || dashBeginTime + DashDuration < Time.time)
+            {
+                isDashing = false;
+                dashCoolDownBegin = Time.time;
+            }
+        }
+        else if(dashCoolDownBegin + DashCoolDownTime < Time.time && isGrounded)//if isGrounded is removed, can dash in air
+        {
+            int moveDir = 0;
+            if (btnX.value > 0) moveDir = 1;
+            else if (btnX.value < 0) moveDir = -1;
 
+            //conditions for starting a dash
+            if(btnX.down && moveDir == dashingDir && DashGapTime + btnX.upTime > Time.time && btnX.downDuration <= dashDownTime)
+            {
+                isDashing = true;
+                dashBeginTime = Time.time;
+            }else if(btnX.hold || btnX.down)
+            {
+                dashingDir = moveDir;
+            }
+        }
     }
 
     public Vector2 WallJumpNormal = new Vector2(1, 1.25f);
@@ -145,7 +169,11 @@ public class PlatformerController : MonoBehaviour
 
     void Move()
     {
-        float moveX = btnX.value * speed;
+        float moveX = isDashing && PlayerAbilities.Dash? btnX.value * DashSpeed: btnX.value * speed;
+
+        //if (isDashing) moveX = btnX.value * DashSpeed;
+        //else moveX = btnX.value * speed;
+
         float moveY = rb.velocity.y;
 
         if (moveX > 0 && isWalledRight) moveX = 0;
