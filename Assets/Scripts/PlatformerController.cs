@@ -6,82 +6,179 @@ using UnityEngine;
 public class PlatformerController : MonoBehaviour
 {
     Rigidbody2D rb;
+    public float speed = 4;
+    public float jumpForce = 6;
+    public float maxGravityForce = 10;
 
-    [SerializeField] float speed = 6;
-    [SerializeField] float jumpSpeed = 6;
+    bool isGrounded = false;
+    public Transform[] isGroundedCheckers;
+    private Transform isGroundedCheckerLeft, isGroundedCheckerRight;
+    private Vector2 groundCheckerLeftPos, groundCheckerRightPos;
+    public float checkGroundRadius = 0.05f;
+    public LayerMask groundLayer;
 
-    //coyote time jump variables
-    [SerializeField] float rememberGroundedFor = 0.1f;
+    //Wall checkers and parameters
+    public Transform[] isWallCheckerLeft, isWallCheckerRight;
+    bool isWalledLeft = false;
+    bool isWalledRight = false;
+    public LayerMask wallLayer;
+
+    //late jump parameters
+    public float rememberGroundedFor = 0.1f;
     float lastTimeGrounded;
 
-    //in air gravity multipiers
-    [SerializeField] float fallMultiplier = 2.5f;
-    [SerializeField] float lowJumpMultiplier = 2f;
+    //in air gravity multipliers
+    public float fallMultiplier = 2.5f;
+    public float lowJumpMultiplier = 2f;
 
-    [SerializeField] LayerMask groundMask, wallMask;
-    public Transform[] isGroundedCheckers, isWallCheckerLeft, isWallCheckerRight;
-    
+    //Multi Jump Counters
+    public int defaultAdditionalJumps = 1;
+    int additionalJumps;
 
-    bool isGrounded, isWalledLeft, isWalledRight;
-
-
-    ButtonInput<float> btnX = new ButtonInput<float>(0.1f);
-    ButtonInput<bool> btnJump = new ButtonInput<bool>(0);
-    ButtonInput<bool> btnGravityFlip = new ButtonInput<bool>(0);
-
-    public Abilities PlayerAbilities;
+    //Debugging Ghost Parameters
+    public GameObject SquareGhostPrefab;
+    public bool showJumpGhost;
+    public bool newJumpGhost;
+    GameObject squareJumpGhost;
 
     //Dash Parameters
-    public float DashGapTime = 0.25f;
+    public float DashGapTime = 0.5f;
+    //float dashDirReleaseTime = Mathf.NegativeInfinity;
     int dashingDir;
     float dashDownTime = 0.2f;
     float dashBeginTime = Mathf.NegativeInfinity;
-    public float DashCoolDownTime = 1;
+    public float DashCooldownTime = 2f;
     float dashCoolDownBegin = Mathf.NegativeInfinity;
-    public float DashDuration = 1;
-    public float DashMultiplier = 3;
+    public float DashDuration = 2f;
+    public float DashMultiplier = 2;
+    public float DashSpeed {
+        get
+        {
+
+            return DashSpeedCalc();
+        }
+    }
     bool isDashing;
-    public float DashSpeed { get { return DashSpeedCalc(); } }
+    
+
+    //Standard Input variables
+    //float moveX;
+    //bool XButton;
+    //bool XButtonDown;
+    //bool XButtonUp;
+    //bool jumpButton;
+    //bool jumpButtonDown;
+    //bool gravityFlipButtonDown;
+    //bool gravityFlipButton;
+
+    public Abilities PlayerAbilities;
+
+    GravityObjectPlayer gravityObject;
+    int gravityFlipped
+    {
+        get { return gravityObject.gravityFlipped; }
+    }
+    bool canFlipGravity { get { return isGrounded; } }
 
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        gravityObject = GetComponent<GravityObjectPlayer>();
+        SetupGroundCheckers();
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
+    {
+        
+    }
+    void FixedUpdate()
     {
         HandleInput();
+        //Adjust the isGroundedChecker position if not grounded
+        AdjustGrounded(isGrounded);
 
         Dash();
         Move();
         WallJump();
         Jump();
         BetterJump();
+        if (gravityFlipped > 0 && rb.velocity.y < -maxGravityForce ) rb.velocity = new Vector2(rb.velocity.x, -maxGravityForce);
+        else if (gravityFlipped < 0 && rb.velocity.y > maxGravityForce) rb.velocity = new Vector2(rb.velocity.x, maxGravityForce);
         CheckIfGrounded();
-        CheckForWalls();
+        CheckForWall();
+
+        GravityFlip();
     }
 
-    void CheckForWalls()
+    void SetupGroundCheckers()
     {
-        isWalledLeft = CheckForCollision(isWallCheckerLeft, wallMask);
-        isWalledRight = CheckForCollision(isWallCheckerRight, wallMask);
+        isGroundedCheckerLeft = isGroundedCheckers[0];
+        isGroundedCheckerRight = isGroundedCheckers[isGroundedCheckers.Length - 1];
+        groundCheckerLeftPos = isGroundedCheckerLeft.localPosition;
+        groundCheckerRightPos = isGroundedCheckerRight.localPosition;
     }
-    private void CheckIfGrounded()
+
+    //Player Input Stats
+    //float lastXDownTime;
+    //float lastXUpTime;
+    //float lastXDownDuration;
+    //float lastXUpDuration;
+    //float lastJumpDownTime;
+    //float lastJumpUpTime;
+    //float lastJumpDownDuration;
+    //float lastJumpUpDuration;
+
+    ButtonInput<float> btnX = new ButtonInput<float>(0.1f);
+    ButtonInput<bool> btnJump = new ButtonInput<bool>(0.1f);
+    ButtonInput<bool> btnGravityFlip = new ButtonInput<bool>(0.1f);
+
+    void SetupInput()
     {
-        isGrounded = CheckForCollision(isGroundedCheckers, groundMask);
-        if (isGrounded)
-        {
-            lastTimeGrounded = Time.time;
-            isWallJumpGrounded = true;
-        }
+
+    }
+
+    void HandleInput()
+    {
+        btnX.UpdateButton(Input.GetAxisRaw("Horizontal"));
+        btnJump.UpdateButton(Input.GetKey(KeyCode.Space) || Input.GetAxisRaw("Jump") > 0);
+        btnGravityFlip.UpdateButton(Input.GetKey(KeyCode.G));
         
     }
+    void Move()
+    {
+        float x = btnX.value;//moveX;//Input.GetAxisRaw("Horizontal");
+        //float moveBy = x * speed;
+        float moveBy = isDashing && PlayerAbilities.Dash ? x * DashSpeed : x * speed;
+        float moveY = rb.velocity.y;
 
+        //breaks horizontal motion if touching a wall in direction of horizontal motion
+        if (moveBy < 0 && isWalledLeft) moveBy = 0;
+        else if (moveBy > 0 && isWalledRight) moveBy = 0;
+
+
+        
+        if (isWallJumping)
+        {
+
+            
+            float dV = Time.deltaTime * (rb.velocity.x - moveBy) / (wallJumpStart + wallJumpDuration - Time.time);
+            //rb.velocity = new Vector2(rb.velocity.x - dV, moveY);
+            moveBy = rb.velocity.x - dV;
+        }
+        rb.velocity = new Vector2(moveBy, moveY);
+    }
     float DashSpeedCalc()
     {
-        float multiplier = (1 - DashMultiplier) * (Time.time - dashBeginTime) / DashDuration + DashMultiplier;
+        //m = At + DashMultiplier
+        //1 = A(DashDuration) + DashMultiplier
+        //1 - DashMultiplier = A*DashDuration
+        //A = (1 - DashMultiplier)/DashDuration
+        //m = t*(1 - DashMultiplier)/DashDuration + DashMultiplier
+      
+        float multiplier = (Time.time - dashBeginTime) * (1 - DashMultiplier) / DashDuration + DashMultiplier;
+        Debug.Log(multiplier);
         return speed * multiplier;
     }
 
@@ -89,134 +186,173 @@ public class PlatformerController : MonoBehaviour
     {
         if (isDashing)
         {
-            if(!btnX.hold || dashBeginTime + DashDuration < Time.time)
+            if(!btnX.hold  || dashBeginTime + DashDuration < Time.time)
             {
                 isDashing = false;
                 dashCoolDownBegin = Time.time;
             }
         }
-        else if(dashCoolDownBegin + DashCoolDownTime < Time.time && isGrounded)//if isGrounded is removed, can dash in air
+        else if(dashCoolDownBegin + DashCooldownTime < Time.time && isGrounded)
         {
             int moveDir = 0;
             if (btnX.value > 0) moveDir = 1;
             else if (btnX.value < 0) moveDir = -1;
-
-            //conditions for starting a dash
-            if(btnX.down && moveDir == dashingDir && DashGapTime + btnX.upTime > Time.time && btnX.downDuration <= dashDownTime)
+            if (btnX.down && moveDir == dashingDir && DashGapTime + btnX.upTime/*lastXUpTime /*dashDirReleaseTime*/ > Time.time && btnX.downDuration/*lastXDownDuration*/ <= dashDownTime)
             {
                 isDashing = true;
                 dashBeginTime = Time.time;
+
             }else if(btnX.hold || btnX.down)
             {
                 dashingDir = moveDir;
             }
+            
         }
     }
-
-    public Vector2 WallJumpNormal = new Vector2(1, 1.25f);
-    public float WallJumpForce = 8;
-    public float WallJumpDuration = 0.5f;
-    private float wallJumpStart;
-    bool isWallJumping { get { return Time.time < wallJumpStart + WallJumpDuration; } }
-    bool isWallJumpGrounded;
+    public Vector2 WallJumpNormal = new Vector2(1,1);
+    int wallJumpDirection = 0;
+    public float wallJumpForce = 10;
+    public float wallJumpDuration = 1;
+    float wallJumpStart;
+    bool isWallJumping { get { return wallJumpStart + wallJumpDuration > Time.time; } set { wallJumpStart = value ?  Time.time: Mathf.NegativeInfinity; } }
     void WallJump()
     {
-
         if (PlayerAbilities.Climb)
         {
-            //walled on left
-            if(isWalledLeft && !isWalledRight && !isGrounded && isWallJumpGrounded)
+            if (isWalledLeft && !isWalledRight && !isGrounded)
             {
                 if (btnJump.down)
                 {
-                    Debug.Log("Wall Jumped Left");
-                    rb.velocity = WallJumpForce * WallJumpNormal; //for gravity flipping we need to modify 
+                    rb.velocity =  wallJumpForce * WallJumpNormal * new Vector2(1,gravityFlipped);
                     wallJumpStart = Time.time;
-                    isWallJumpGrounded = false;
+                    wallJumpDirection = 1;
                 }
             }
-            //walled on right
-            else if (isWalledRight && !isWalledLeft && !isGrounded && isWallJumpGrounded)
+            else if (!isWalledLeft && isWalledRight && !isGrounded)
             {
                 if (btnJump.down)
                 {
-                    rb.velocity = new Vector2(-WallJumpForce * WallJumpNormal.x, WallJumpForce * WallJumpNormal.y);
+                    Debug.Log("WallJumped");
+                    rb.velocity = new Vector2(-wallJumpForce * WallJumpNormal.x, wallJumpForce * WallJumpNormal.y) * new Vector2(1, gravityFlipped);
                     wallJumpStart = Time.time;
-                    isWallJumpGrounded = false;
+                    wallJumpDirection = -1;
                 }
             }
         }
     }
-
     void Jump()
     {
-        if (btnJump.down && (isGrounded || Time.time - lastTimeGrounded <= rememberGroundedFor))
+        if (showJumpGhost && /*Input.GetKeyDown(KeyCode.Space)*/ btnJump.down)
         {
-            rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
+            if (!squareJumpGhost || newJumpGhost)
+            {
+                squareJumpGhost = Instantiate(SquareGhostPrefab, transform.position, Quaternion.identity);
+            }
+            else
+            {
+                squareJumpGhost.transform.position = transform.position;
+            }
+            AdjustGrounded(false);
+        }
+
+        if (/*Input.GetKeyDown(KeyCode.Space)*/ btnJump.down && (isGrounded || Time.time - lastTimeGrounded <= rememberGroundedFor || (PlayerAbilities.DoubleJump && additionalJumps > 0)) )
+        {
+            
+            rb.velocity = new Vector2(rb.velocity.x, gravityFlipped*jumpForce);
+            if(!isGrounded) additionalJumps -= 1;
         }
     }
-
     void BetterJump()
     {
-        if(rb.velocity.y < 0)
+        if (gravityFlipped * rb.velocity.y < 0)
         {
             rb.velocity += Vector2.up * Physics2D.gravity * (fallMultiplier - 1) * Time.deltaTime;
-        }else if(rb.velocity.y > 0 && !btnJump.hold)
+        }
+        else if (gravityFlipped * rb.velocity.y > 0 && !btnJump.hold)
         {
             rb.velocity += Vector2.up * Physics2D.gravity * (lowJumpMultiplier - 1) * Time.deltaTime;
         }
     }
-
-    void Move()
+    //allows for extended jumps on ledges and prevents isGrounded from being triggered by a wall
+    void AdjustGrounded(bool grounded)
     {
-        float moveX = isDashing && PlayerAbilities.Dash? btnX.value * DashSpeed: btnX.value * speed;
-
-        //if (isDashing) moveX = btnX.value * DashSpeed;
-        //else moveX = btnX.value * speed;
-
-        float moveY = rb.velocity.y;
-
-        if (moveX > 0 && isWalledRight) moveX = 0;
-        else if (moveX < 0 && isWalledLeft) moveX = 0;
-
-        if (isWallJumping)
+        //Debug.Log("Adjusted(" + grounded + ")");
+        Vector2 leftPos = groundCheckerLeftPos * new Vector2(1, gravityFlipped);
+        Vector2 rightPos = groundCheckerRightPos * new Vector2(1, gravityFlipped);
+        if (grounded)
         {
-            //dV increases as time remaining decreases
-            float dV = Time.deltaTime * (rb.velocity.x - moveX) / (wallJumpStart + WallJumpDuration - Time.time);
-            moveX = rb.velocity.x - dV;
+            isGroundedCheckerLeft.localPosition = leftPos; // groundCheckerLeftPos;
+            isGroundedCheckerRight.localPosition = rightPos;// groundCheckerRightPos;
         }
-
-
-        rb.velocity = new Vector2(moveX, moveY);
+        else
+        {
+            Vector2 offset = new Vector2(0.05f, 0);
+            isGroundedCheckerLeft.localPosition = /*groundCheckerLeftPos*/ leftPos + offset;
+            isGroundedCheckerRight.localPosition = /*groundCheckerRightPos*/ rightPos - offset;
+        }
     }
 
-
-    void HandleInput()
+    void GravityFlip()
     {
-        btnX.UpdateButton(Input.GetAxisRaw("Horizontal"));
-        btnJump.UpdateButton(Input.GetKey(KeyCode.Space) || Input.GetAxisRaw("Jump") > 0.1f);
-        btnGravityFlip.UpdateButton(Input.GetKey(KeyCode.G));
+        if (PlayerAbilities.GravitySwitch && btnGravityFlip.down && canFlipGravity)
+        {
+            
+            FindObjectOfType<WorldHandler>().FlipGravity();
+        }
     }
 
-    float checkGroundRadius = 0.05f;
-    bool CheckForCollision(Vector2 checkPos, LayerMask layer)
-    {
-        if (Physics2D.OverlapCircle(checkPos, checkGroundRadius, layer)) return true;
-        else return false;
+    void CheckIfGrounded()
+    { 
+        isGrounded = CheckForCollision(isGroundedCheckers, groundLayer);
+        if(isGrounded) lastTimeGrounded = Time.time;
+        if (isGrounded) additionalJumps = defaultAdditionalJumps;
     }
+
+    void CheckForWall()
+    {
+        isWalledLeft = CheckForCollision(isWallCheckerLeft, wallLayer);
+        isWalledRight = CheckForCollision(isWallCheckerRight, wallLayer);
+    }
+    bool CheckForCollision(Vector2 checkerPos, LayerMask layer)
+    {
+        Collider2D collider = Physics2D.OverlapCircle(checkerPos, checkGroundRadius, layer);
+        
+        if (collider != null)
+        {
+            
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     bool CheckForCollision(Transform checker, LayerMask layer)
     {
-        if (CheckForCollision(checker.position, layer)) return true;
-        else return false;
+        //Collider2D collider = Physics2D.OverlapCircle(checker.position, checkGroundRadius, groundLayer);
+        if (CheckForCollision(checker.position, layer))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
+
     bool CheckForCollision(Transform[] checkers, LayerMask layer)
     {
         foreach(Transform checker in checkers)
         {
-            if (CheckForCollision(checker, layer)) return true;
+            if (CheckForCollision(checker, layer))
+            {
+                return true;
+            }
         }
         return false;
     }
+    
 }
 
 [System.Serializable]
