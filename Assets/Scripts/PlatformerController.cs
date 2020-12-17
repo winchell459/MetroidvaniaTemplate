@@ -80,9 +80,11 @@ public class PlatformerController : MonoBehaviour
     }
     bool canFlipGravity { get { return isGrounded; } }
 
+    private Vector3 defaultScale;
     // Start is called before the first frame update
     void Start()
     {
+        defaultScale = transform.localScale;
         rb = GetComponent<Rigidbody2D>();
         gravityObject = GetComponent<GravityObjectPlayer>();
         SetupGroundCheckers();
@@ -97,7 +99,7 @@ public class PlatformerController : MonoBehaviour
     {
         HandleInput();
         //Adjust the isGroundedChecker position if not grounded
-        AdjustGrounded(isGrounded);
+        //AdjustGrounded(isGrounded);
 
         Dash();
         Move();
@@ -157,7 +159,7 @@ public class PlatformerController : MonoBehaviour
         if (moveBy < 0 && isWalledLeft) moveBy = 0;
         else if (moveBy > 0 && isWalledRight) moveBy = 0;
 
-
+        
         
         if (isWallJumping)
         {
@@ -167,6 +169,9 @@ public class PlatformerController : MonoBehaviour
             //rb.velocity = new Vector2(rb.velocity.x - dV, moveY);
             moveBy = rb.velocity.x - dV;
         }
+        //if (x > 0) transform.localScale = defaultScale;
+        //else if (x < 0) transform.localScale = new Vector3(-defaultScale.x, defaultScale.y, defaultScale.z);
+
         rb.velocity = new Vector2(moveBy, moveY);
     }
     float DashSpeedCalc()
@@ -219,8 +224,10 @@ public class PlatformerController : MonoBehaviour
     {
         if (PlayerAbilities.Climb)
         {
+            
             if (isWalledLeft && !isWalledRight && !isGrounded)
             {
+                //Debug.Log("WallJumpLeft");
                 if (btnJump.down)
                 {
                     rb.velocity =  wallJumpForce * WallJumpNormal * new Vector2(1,gravityFlipped);
