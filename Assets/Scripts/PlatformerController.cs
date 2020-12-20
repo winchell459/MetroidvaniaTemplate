@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class PlatformerController : MonoBehaviour
 {
+    public GameObject CharacterSprite;
     Rigidbody2D rb;
     public float speed = 4;
     public float jumpForce = 6;
@@ -84,7 +85,7 @@ public class PlatformerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        defaultScale = transform.localScale;
+        defaultScale = CharacterSprite.transform.localScale;
         rb = GetComponent<Rigidbody2D>();
         gravityObject = GetComponent<GravityObjectPlayer>();
         SetupGroundCheckers();
@@ -93,7 +94,11 @@ public class PlatformerController : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
-        
+        if (Input.GetKeyDown(KeyCode.B) && GetComponentInChildren<Bomb>())
+        {
+            Debug.Log("Throwing Bomb");
+            GetComponentInChildren<Bomb>().Throw(CharacterSprite.transform);
+        }
     }
     void FixedUpdate()
     {
@@ -169,10 +174,11 @@ public class PlatformerController : MonoBehaviour
             //rb.velocity = new Vector2(rb.velocity.x - dV, moveY);
             moveBy = rb.velocity.x - dV;
         }
-        //if (x > 0) transform.localScale = defaultScale;
-        //else if (x < 0) transform.localScale = new Vector3(-defaultScale.x, defaultScale.y, defaultScale.z);
+        if (x > 0) CharacterSprite.transform.localScale = defaultScale;
+        else if (x < 0) CharacterSprite.transform.localScale = new Vector3(-defaultScale.x, defaultScale.y, defaultScale.z);
 
         rb.velocity = new Vector2(moveBy, moveY);
+        CharacterSprite.GetComponent<Animator>().SetFloat("xVelocity", Mathf.Abs(moveBy));
     }
     float DashSpeedCalc()
     {
@@ -311,6 +317,7 @@ public class PlatformerController : MonoBehaviour
     void CheckIfGrounded()
     { 
         isGrounded = CheckForCollision(isGroundedCheckers, groundLayer);
+        CharacterSprite.GetComponent<Animator>().SetBool("isGrounded", isGrounded);
         if(isGrounded) lastTimeGrounded = Time.time;
         if (isGrounded) additionalJumps = defaultAdditionalJumps;
     }

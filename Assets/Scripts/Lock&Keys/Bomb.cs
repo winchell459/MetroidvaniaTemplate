@@ -32,7 +32,7 @@ public class Bomb : MonoBehaviour
 
         //get velocity and direction of the player
         float dir = Mathf.Sign(Thrower.localScale.x);
-        Vector2 ThrowerVelocity = Thrower.GetComponent<Rigidbody2D>().velocity;
+        Vector2 ThrowerVelocity = Thrower.parent.GetComponent<Rigidbody2D>().velocity;
 
         
         rb.velocity = ThrowerVelocity + new Vector2(dir * ThrowingVelocity.x, ThrowingVelocity.y);
