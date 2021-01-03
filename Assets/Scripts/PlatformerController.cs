@@ -82,6 +82,9 @@ public class PlatformerController : MonoBehaviour
     bool canFlipGravity { get { return isGrounded; } }
 
     private Vector3 defaultScale;
+
+    public GameObject JumpDustPrefab;
+    public Transform JumpParticalLoc;
     // Start is called before the first frame update
     void Start()
     {
@@ -179,6 +182,7 @@ public class PlatformerController : MonoBehaviour
 
         rb.velocity = new Vector2(moveBy, moveY);
         CharacterSprite.GetComponent<Animator>().SetFloat("xVelocity", Mathf.Abs(moveBy));
+        CharacterSprite.GetComponent<Animator>().SetFloat("yVelocity", moveY);
     }
     float DashSpeedCalc()
     {
@@ -272,7 +276,14 @@ public class PlatformerController : MonoBehaviour
         {
             
             rb.velocity = new Vector2(rb.velocity.x, gravityFlipped*jumpForce);
-            if(!isGrounded) additionalJumps -= 1;
+            if (!isGrounded)
+            {
+                additionalJumps -= 1;
+                GameObject dust = Instantiate(JumpDustPrefab, JumpParticalLoc.position, Quaternion.identity);
+                Destroy(dust, 2);
+            }
+            
+
         }
     }
     void BetterJump()
@@ -282,6 +293,10 @@ public class PlatformerController : MonoBehaviour
             rb.velocity += Vector2.up * Physics2D.gravity * (fallMultiplier - 1) * Time.deltaTime;
         }
         else if (gravityFlipped * rb.velocity.y > 0 && !btnJump.hold)
+        {
+            rb.velocity += Vector2.up * Physics2D.gravity * (lowJumpMultiplier*4 - 1) * Time.deltaTime;
+        }
+        else if (gravityFlipped * rb.velocity.y > 0 && btnJump.hold)
         {
             rb.velocity += Vector2.up * Physics2D.gravity * (lowJumpMultiplier - 1) * Time.deltaTime;
         }
