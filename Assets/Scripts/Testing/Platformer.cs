@@ -209,16 +209,18 @@ public class Platformer : MonoBehaviour
         float x = btnX.value;//moveX;//Input.GetAxisRaw("Horizontal");
         //float moveBy = x * speed;
         float moveBy = isDashing && PlayerAbilities.Dash ? x * DashSpeed : x * speed;
+        float moveY = rb.velocity.y;
 
         //breaks horizontal motion if touching a wall in direction of horizontal motion
         if (moveBy < 0 && isWalledLeft) moveBy = 0;
         else if (moveBy > 0 && isWalledRight) moveBy = 0;
 
 
-        if (!isWallJumping) rb.velocity = new Vector2(moveBy, rb.velocity.y);
-        else
+        //if (!isWallJumping && isGrounded && Mathf.Abs(x) < 0.1f) moveY = 0;// rb.velocity = new Vector2(moveBy, moveY);
+        //else
+        if (isWallJumping)
         {
-            
+
             //Debug.Log(Mathf.Sign(rb.velocity.x));
 
             //zero out velocity if direction held for entire jump
@@ -227,9 +229,11 @@ public class Platformer : MonoBehaviour
             //rb.velocity = new Vector2(rb.velocity.x - movingWeight * wallJumpDirection * Time.deltaTime * speed / wallJumpDuration, rb.velocity.y);
 
             //rb.velocity = new Vector2(rb.velocity.x - movingWeight * wallJumpDirection * Time.deltaTime * /*wallJumpForce*/ moveBy/wallJumpDuration, rb.velocity.y);
-            float dV = Time.deltaTime * (rb.velocity.x - moveBy) / (wallJumpStart + wallJumpDuration - Time.time) ;
-            rb.velocity = new Vector2(rb.velocity.x - dV, rb.velocity.y);
+            float dV = Time.deltaTime * (rb.velocity.x - moveBy) / (wallJumpStart + wallJumpDuration - Time.time);
+            //rb.velocity = new Vector2(rb.velocity.x - dV, moveY);
+            moveBy = rb.velocity.x - dV;
         }
+        rb.velocity = new Vector2(moveBy, moveY);
     }
     float DashSpeedCalc()
     {
@@ -254,7 +258,7 @@ public class Platformer : MonoBehaviour
                 dashCoolDownBegin = Time.time;
             }
         }
-        else if(dashCoolDownBegin + DashCooldownTime < Time.time)
+        else if(dashCoolDownBegin + DashCooldownTime < Time.time && isGrounded)
         {
             int moveDir = 0;
             if (btnX.value > 0) moveDir = 1;
@@ -381,6 +385,7 @@ public class Platformer : MonoBehaviour
     bool CheckForCollision(Vector2 checkerPos, LayerMask layer)
     {
         Collider2D collider = Physics2D.OverlapCircle(checkerPos, checkGroundRadius, layer);
+        
         if (collider != null)
         {
             

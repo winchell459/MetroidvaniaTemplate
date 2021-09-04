@@ -10,8 +10,8 @@ public class ButtonInput<T>
     public float downTime;
     public float upTime;
     public T value;
-    public float upDuration { get { return Time.time - upTime; } }
-    public float downDuration { get { return Time.time - downTime; } }
+    public float upDuration  {get { return downTime < upTime? Time.time - upTime: downTime - upTime; } }//{ get { return Time.time - upTime; } }
+    public float downDuration { get { return upTime < downTime? Time.time - downTime: upTime - downTime; } }//{ get { return Time.time - downTime; } }
     float threshold;
 
     public ButtonInput(float threshold)
