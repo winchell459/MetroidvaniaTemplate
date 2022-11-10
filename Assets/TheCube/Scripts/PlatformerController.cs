@@ -6,6 +6,7 @@ using UnityEngine;
 public class PlatformerController : MonoBehaviour
 {
     public GameObject CharacterSprite;
+    private Animator anim;
     Rigidbody2D rb;
     public float speed = 4;
     public float jumpForce = 6;
@@ -88,6 +89,7 @@ public class PlatformerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        anim = CharacterSprite.GetComponent<Animator>();
         defaultScale = CharacterSprite.transform.localScale;
         rb = GetComponent<Rigidbody2D>();
         gravityObject = GetComponent<GravityObjectPlayer>();
@@ -181,8 +183,8 @@ public class PlatformerController : MonoBehaviour
         else if (x < 0) CharacterSprite.transform.localScale = new Vector3(-defaultScale.x, defaultScale.y, defaultScale.z);
 
         rb.velocity = new Vector2(moveBy, moveY);
-        CharacterSprite.GetComponent<Animator>().SetFloat("xVelocity", Mathf.Abs(moveBy));
-        CharacterSprite.GetComponent<Animator>().SetFloat("yVelocity", moveY);
+        if(anim) anim.SetFloat("xVelocity", Mathf.Abs(moveBy));
+        if (anim) anim.SetFloat("yVelocity", moveY);
     }
     float DashSpeedCalc()
     {
@@ -332,7 +334,7 @@ public class PlatformerController : MonoBehaviour
     void CheckIfGrounded()
     { 
         isGrounded = CheckForCollision(isGroundedCheckers, groundLayer);
-        CharacterSprite.GetComponent<Animator>().SetBool("isGrounded", isGrounded);
+        if (anim) anim.SetBool("isGrounded", isGrounded);
         if(isGrounded) lastTimeGrounded = Time.time;
         if (isGrounded) additionalJumps = defaultAdditionalJumps;
     }

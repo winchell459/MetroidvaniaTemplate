@@ -23,6 +23,9 @@ public class CameraController : MonoBehaviour
         Origin = transform.position;
         gridOffset = new Vector2(Origin.x - GridSize.x/2, Origin.y - GridSize.y/2);
         Offset = Target.position - transform.position;
+        float height = 2 * GetComponent<Camera>().orthographicSize;
+        float width = GetComponent<Camera>().aspect * height;
+        GridSize = new Vector2(width, height);
     }
 
     private void FixedUpdate()
@@ -39,7 +42,7 @@ public class CameraController : MonoBehaviour
             {
                 int gridH = 0;
                 int gridW = 0;
-                bool code1 = false;
+                bool code1 = true;
                 if (code1)
                 {
                     gridH = (int)((-Origin.y + Target.position.y + GridSize.y / 2) / GridSize.y);
